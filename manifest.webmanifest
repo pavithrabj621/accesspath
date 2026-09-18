@@ -1,0 +1,17 @@
+{
+  "name": "AccessPathAI Paavai Campus Navigation",
+  "short_name": "AccessPathAI",
+  "start_url": "/?voice=1",
+  "display": "standalone",
+  "theme_color": "#800020",
+  "background_color": "#f8f8f9",
+  "description": "Voice-first campus navigation with walking directions, live GPS, camera guidance, and obstacle alerts.",
+  "icons": [
+    {
+      "src": "/static/icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

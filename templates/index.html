@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#800020">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="description" content="AccessPathAI — AI-powered smart campus navigation for Paavai Engineering College, Namakkal.">
+<title>AccessPathAI — Paavai Engineering College</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<style>
+:root{
+  --wine:#800020;--wine-dark:#650018;--wine-soft:#f7e9ee;
+  --bg:#f8f8f9;--card:#fff;--text:#171717;--muted:#6b6b6b;
+  --border:#e7e7e7;--green:#059669;--green-soft:#ecfdf5;
+  --red:#dc2626;--red-soft:#fef2f2;
+  --shadow:0 10px 35px rgba(0,0,0,.055);
+  --font:"Plus Jakarta Sans",sans-serif;--head:"Space Grotesk",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
+button,input,select{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid rgba(128,0,32,.25);outline-offset:2px}
+nav{height:68px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 clamp(14px,3vw,30px);position:sticky;top:0;z-index:1000}
+.brand{display:flex;align-items:center;gap:10px;font:700 24px var(--head);color:var(--wine);white-space:nowrap}
+.brand span{color:#171717}
+.brand svg{width:26px;height:26px;stroke-width:2.5}
+.nav-right{display:flex;align-items:center;gap:12px}
+.gps-pill{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:var(--green-soft);color:#047857;font-size:12px;font-weight:800;white-space:nowrap}
+.gps-dot{width:9px;height:9px;border-radius:50%;background:#10b981;box-shadow:0 0 0 4px rgba(16,185,129,.12)}
+.gps-pill.error{background:var(--red-soft);color:#b91c1c}.gps-pill.error .gps-dot{background:var(--red)}
+.lang-select{height:42px;width:205px;border:1px solid #ddd;border-radius:10px;background:#fff;padding:0 12px;font-weight:600;font-size:13px;color:#222}
+.dashboard{display:flex;min-height:calc(100vh - 68px)}
+aside{width:300px;flex:0 0 300px;background:#fcf9f9;border-right:1px solid var(--border);padding:28px 22px 20px;display:flex;flex-direction:column;justify-content:space-between}
+.sidebar-title{text-transform:uppercase;letter-spacing:.08em;color:#777;font-size:12px;font-weight:800;margin-bottom:15px}
+.menu{display:flex;flex-direction:column;gap:5px}
+.menu-item{border:0;background:transparent;border-radius:13px;min-height:55px;padding:0 15px;display:flex;align-items:center;gap:13px;font-size:14px;font-weight:700;color:#222;text-align:left;transition:.2s;width:100%}
+.menu-item svg{width:22px;height:22px;flex:none}.menu-item:hover,.menu-item.active{background:var(--wine-soft);color:var(--wine)}
+.sos-btn{border:0;width:100%;min-height:62px;border-radius:13px;background:#e52424;color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 7px 20px rgba(220,38,38,.22);transition:.2s}
+.sos-btn:hover{background:#b91c1c;transform:translateY(-1px)}.sos-btn svg{width:22px}
+main{flex:1;min-width:0;padding:30px;overflow-x:hidden}
+.main-inner{max-width:1500px;margin:auto}
+.card{background:#fff;border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow)}
+.control-card{padding:22px}
+.status-row{display:flex;flex-wrap:wrap;gap:12px 28px;margin-bottom:18px}
+.status-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.status-item svg{width:19px;height:19px;color:var(--wine)}.status-value{font-weight:800;max-width:360px;overflow-wrap:anywhere}
+.search-row{display:grid;grid-template-columns:minmax(0,1fr) 58px 58px;gap:10px}
+.destination-input{height:56px;border:1px solid #ddd;border-radius:12px;padding:0 17px;outline:0;font-size:15px;background:#fff}
+.destination-input:focus{border-color:var(--wine);box-shadow:0 0 0 4px rgba(128,0,32,.07)}
+.action-btn{height:56px;width:58px;border:0;border-radius:12px;background:var(--wine);color:#fff;display:flex;align-items:center;justify-content:center;transition:.2s}
+.action-btn:hover{background:var(--wine-dark);transform:translateY(-1px)}.action-btn svg{width:23px}
+.action-btn.listening{background:var(--red);animation:pulse 1s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 12px rgba(220,38,38,0)}}
+.message{display:none;margin-top:13px;padding:11px 14px;border-radius:10px;font-size:12px;font-weight:700;line-height:1.5}
+.message.show{display:block}.quick{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+.quick button{border:1px solid #e2e2e2;background:#fff;border-radius:999px;padding:8px 11px;font-size:11px;font-weight:700;color:#444}
+.quick button:hover{border-color:var(--wine);color:var(--wine);background:var(--wine-soft)}
+.map-panel{margin-top:18px;padding:20px;display:none}
+.map-frame{width:100%;height:260px;border:0;border-radius:12px;margin-top:15px;background:#f3f3f3}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}
+.panel-title{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:800}.panel-title svg{color:var(--wine);width:22px}
+.badge{font-size:10px;font-weight:800;color:#555;background:#f5f5f5;padding:6px 9px;border-radius:999px}
+.route-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px}
+.route-box{background:#fafafa;border:1px solid #eee;border-radius:12px;padding:13px}
+.route-label{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:.05em;font-weight:800;margin-bottom:5px}
+.route-value{font-size:13px;font-weight:800;line-height:1.5;word-break:break-word}
+.url-label{font-size:11px;color:#777;font-weight:800;margin-bottom:6px}.url-box{display:flex;gap:8px}
+.google-url{height:44px;flex:1;min-width:0;border:1px solid #ddd;border-radius:9px;background:#f8f8f8;padding:0 11px;font-size:11px;color:#444}
+.copy-btn{height:44px;border:1px solid #ddd;background:#fff;border-radius:9px;padding:0 14px;font-size:12px;font-weight:800;display:flex;align-items:center;gap:6px}
+.copy-btn:hover{border-color:var(--wine);color:var(--wine)}
+.start-navigation{margin-top:12px;min-height:52px;background:var(--wine);color:#fff;border-radius:11px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:800;text-align:center;padding:9px 14px}
+.start-navigation:hover{background:var(--wine-dark)}.start-navigation svg{width:18px}
+.ready{display:none;margin-top:12px;padding:12px;border-radius:10px;background:var(--green-soft);color:#047857;border:1px solid #c9f4e3;font-size:12px;font-weight:700;align-items:center;gap:8px}.ready.show{display:flex}
+.empty{margin-top:18px;min-height:330px;padding:35px 25px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.empty-icon{width:70px;height:70px;border-radius:50%;background:var(--wine-soft);color:var(--wine);display:flex;align-items:center;justify-content:center;margin-bottom:17px}
+.empty-icon svg{width:34px}.empty h2{font:700 25px var(--head);margin-bottom:8px}.empty p{max-width:700px;color:#707070;font-size:13px;line-height:1.7}
+.demo-note{margin-top:15px;background:#fffaf0;border:1px solid #f1dfb5;border-radius:12px;padding:12px 14px;font-size:11px;color:#765b17;line-height:1.55}
+.mobile-nav{display:none}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:1050px){aside{width:240px;flex-basis:240px}main{padding:22px}.lang-select{width:175px}}
+@media(max-width:800px){
+ body{padding-bottom:72px}nav{height:62px;padding:0 12px}.brand{font-size:20px}.brand svg{width:22px}.gps-pill{display:none}.lang-select{width:auto;max-width:165px;height:39px;font-size:11px}
+ aside{display:none}.dashboard{display:block;min-height:calc(100vh - 62px)}main{padding:12px 12px 22px}.control-card{padding:15px;border-radius:15px}
+ .status-row{gap:9px 16px}.status-item{font-size:11px}.status-value{max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .search-row{grid-template-columns:minmax(0,1fr) 51px 51px;gap:7px}.destination-input,.action-btn{height:51px}.action-btn{width:51px}.destination-input{font-size:13px;padding:0 12px}
+ .map-panel{padding:15px;border-radius:15px}.panel-head{align-items:flex-start;flex-direction:column}.route-grid{grid-template-columns:1fr}.url-box{flex-direction:column}.google-url,.copy-btn{width:100%;height:43px}
+ .empty{min-height:280px;padding:25px 15px;border-radius:15px}.empty h2{font-size:20px}.empty p{font-size:12px}
+ .mobile-nav{position:fixed;display:flex;left:0;right:0;bottom:0;height:72px;background:#fff;border-top:1px solid var(--border);box-shadow:0 -5px 20px rgba(0,0,0,.08);z-index:2000;padding:6px 6px calc(6px + env(safe-area-inset-bottom));gap:4px}
+ .mobile-nav-item{flex:1;border:0;background:transparent;border-radius:10px;color:#666;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:8px;font-weight:800}.mobile-nav-item svg{width:20px}.mobile-nav-item.active{background:var(--wine-soft);color:var(--wine)}
+}
+@media(max-width:430px){
+ .brand{font-size:17px}.lang-select{max-width:145px;font-size:10px}.search-row{grid-template-columns:minmax(0,1fr) 47px 47px}.action-btn{width:47px;height:49px}.destination-input{height:49px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+</style>
+</head>
+
+<body>
+<nav>
+  <div class="brand"><i data-lucide="compass"></i>AccessPath<span>AI</span></div>
+  <div class="nav-right">
+    <div class="gps-pill" id="gpsPill"><span class="gps-dot"></span><span id="gpsStatus">GPS locating...</span></div>
+    <select id="languagePicker" class="lang-select" aria-label="Select language">
+      <option value="en-IN">English (India)</option>
+      <option value="ta-IN">தமிழ் (Tamil)</option>
+      <option value="hi-IN">हिन्दी (Hindi)</option>
+      <option value="te-IN">తెలుగు (Telugu)</option>
+      <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+      <option value="ml-IN">മലയാളം (Malayalam)</option>
+    </select>
+  </div>
+</nav>
+
+<div class="dashboard">
+  <aside>
+    <div>
+      <div class="sidebar-title">Paavai Campus Navigation</div>
+      <div class="menu">
+        <button class="menu-item active" type="button"><i data-lucide="bot"></i><span>AI Voice Assistant</span></button>
+        <button class="menu-item" type="button" onclick="openVisualGuidance()"><i data-lucide="eye"></i><span>Visual AI Guidance</span></button>
+        <button class="menu-item" type="button" onclick="openCampusShuttle()"><i data-lucide="bus"></i><span>Campus Shuttle Live</span></button>
+      </div>
+    </div>
+    <button class="sos-btn" type="button" onclick="triggerSOS()"><i data-lucide="alert-triangle"></i>EMERGENCY SOS</button>
+  </aside>
+
+  <main>
+    <div class="main-inner">
+      <section class="card control-card">
+        <div class="status-row">
+          <div class="status-item"><i data-lucide="navigation-2"></i><span>Current GPS:</span><span class="status-value" id="currentLocDisplay">Acquiring position...</span></div>
+          <div class="status-item"><i data-lucide="map-pin"></i><span>Destination:</span><span class="status-value" id="targetDisplay">None</span></div>
+        </div>
+
+        <div class="search-row">
+          <input id="userInput" class="destination-input" type="text" autocomplete="off"
+                 placeholder="Type or speak a Paavai campus destination..."
+                 aria-label="Campus destination" onkeydown="handleEnter(event)">
+          <button class="action-btn" id="micBtn" type="button" title="Voice input" aria-label="Voice input" onclick="toggleVoiceInput()">
+            <i data-lucide="mic"></i>
+          </button>
+          <button class="action-btn" type="button" title="Create route" aria-label="Create route" onclick="processTextSubmit()">
+            <i data-lucide="navigation"></i>
+          </button>
+        </div>
+
+        <div class="quick" aria-label="Popular campus destinations">
+          <button type="button" onclick="quickDestination('Central Library')">Central Library</button>
+          <button type="button" onclick="quickDestination('Anandha Arangam Auditorium')">Auditorium</button>
+          <button type="button" onclick="quickDestination('Administrative Office')">Administrative Office</button>
+          <button type="button" onclick="quickDestination('CSE Department')">CSE</button>
+          <button type="button" onclick="quickDestination('AICTE Idea Lab')">AICTE Idea Lab</button>
+          <button type="button" onclick="quickDestination('Medical Centre')">Medical Centre</button>
+        </div>
+
+        <div class="message" id="message" role="status"></div>
+      </section>
+
+      <section class="card map-panel" id="googlePanel">
+        <div class="panel-head">
+          <div class="panel-title"><i data-lucide="map"></i><span>Paavai Campus Google Maps Navigation</span></div>
+          <div class="badge">GOOGLE MAPS</div>
+        </div>
+
+        <div class="route-grid">
+          <div class="route-box"><div class="route-label">Starting point</div><div class="route-value" id="googleOrigin">Waiting for GPS...</div></div>
+          <div class="route-box"><div class="route-label">Destination</div><div class="route-value" id="googleDestination">None</div></div>
+        </div>
+
+        <iframe id="campusMap" class="map-frame" title="Interactive campus map" loading="lazy" allowfullscreen></iframe>
+
+        <div class="url-label">Google Maps Directions URL</div>
+        <div class="url-box">
+          <input id="googleMapsUrl" class="google-url" readonly aria-label="Google Maps URL">
+          <button class="copy-btn" type="button" onclick="copyGoogleUrl()"><i data-lucide="copy"></i>Copy URL</button>
+        </div>
+
+        <a id="startNavigation" class="start-navigation" href="#" target="_blank" rel="noopener noreferrer">
+          <i data-lucide="navigation"></i>Start Walking Navigation in Google Maps
+        </a>
+
+        <div class="ready" id="navigationReady"><i data-lucide="check-circle"></i><span>Route link is ready. Google Maps will calculate the road/walking route.</span></div>
+      </section>
+
+      <section class="card empty" id="emptyState">
+        <div class="empty-icon"><i data-lucide="map"></i></div>
+        <h2>Smart Campus Navigation</h2>
+        <p>AccessPathAI is configured for <strong>Paavai Engineering College, Paavai Nagar, NH-44, Pachal, Namakkal – 637018</strong>. Enter a destination, use your voice, or choose a quick destination to open a Google Maps route from your current position.</p>
+    </section>
+    </div>
+  </main>
+</div>
+
+<div class="mobile-nav">
+  <button class="mobile-nav-item active" type="button" onclick="setMobileActive(this);window.scrollTo({top:0,behavior:'smooth'})"><i data-lucide="bot"></i><span>Voice</span></button>
+  <button class="mobile-nav-item" type="button" onclick="setMobileActive(this);openVisualGuidance()"><i data-lucide="eye"></i><span>Visual</span></button>
+  <button class="mobile-nav-item" type="button" onclick="setMobileActive(this);openCampusShuttle()"><i data-lucide="bus"></i><span>Shuttle</span></button>
+  <button class="mobile-nav-item" type="button" onclick="triggerSOS()"><i data-lucide="alert-triangle"></i><span>SOS</span></button>
+</div>
+
+<div id="voiceStartupStatus" class="sr-only" role="status" aria-live="assertive"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   PAAVAI ENGINEERING COLLEGE CONFIGURATION
+   Official address: Paavai Nagar, NH-44, Pachal, Namakkal 637018.
+   Campus-area coordinates are used only for laptop demo fallback.
+========================================================= */
+const CAMPUS = {
+  name: "Paavai Engineering College",
+  shortName: "Paavai",
+  address: "Paavai Engineering College, Paavai Nagar, NH-44, Pachal, Namakkal, Tamil Nadu 637018, India",
+  demoLat: 11.4001,
+  demoLng: 78.1622
+};
+
+let userLat = null;
+let userLng = null;
+let currentAccuracy = null;
+let currentGoogleMapsUrl = "";
+let recognition = null;
+let usingDemoLocation = false;
+let autoVoiceStarted = false;
+let voiceAttempts = 0;
+const MAX_VOICE_ATTEMPTS = 3;
+let voiceFlowActive = false;
+let destinationCapturedThisSession = false;
+let mapsNavigationWindow = null;
+
+/* Verified/publicly documented Paavai facilities and current departments.
+   These are aliases, not claims about exact building numbers. */
+const CAMPUS_DESTINATIONS = [
+  {name:"Central Library", aliases:["central library","library"]},
+  {name:"Anandha Arangam Auditorium", aliases:["anandha arangam","auditorium","main auditorium"]},
+  {name:"Administrative Office", aliases:["administrative office","administrative block","admin office","admin block"]},
+  {name:"Principal Office", aliases:["principal office","principal"]},
+  {name:"Controller of Examinations", aliases:["controller of examinations","controller of examination","coe","exam cell","examination cell"]},
+  {name:"CSE Department", aliases:["computer science and engineering","computer science engineering","cse department","cse block","cse"]},
+  {name:"AI and Machine Learning Department", aliases:["artificial intelligence and machine learning","ai ml","aiml","ai and ml department"]},
+  {name:"Artificial Intelligence and Data Science Department", aliases:["artificial intelligence and data science","ai data science","aids","aids department"]},
+  {name:"Information Technology Department", aliases:["information technology department","information technology","it department","it block","it"]},
+  {name:"Electronics and Communication Engineering Department", aliases:["electronics and communication engineering","electronics and communication","ece department","ece"]},
+  {name:"Electrical and Electronics Engineering Department", aliases:["electrical and electronics engineering","electrical and electronics","eee department","eee"]},
+  {name:"Mechanical Engineering Department", aliases:["mechanical engineering","mechanical department","mechanical"]},
+  {name:"Civil Engineering Department", aliases:["civil engineering","civil department","civil"]},
+  {name:"Chemical Engineering Department", aliases:["chemical engineering","chemical department"]},
+  {name:"Biomedical Engineering Department", aliases:["biomedical engineering","biomedical department","bme department","bme"]},
+  {name:"Biotechnology Department", aliases:["biotechnology department","biotechnology","biotech"]},
+  {name:"Aeronautical Engineering Department", aliases:["aeronautical engineering","aeronautical department","aero department","aero"]},
+  {name:"Agricultural Engineering Department", aliases:["agricultural engineering","agriculture engineering","agri engineering","agri department"]},
+  {name:"Food Technology Department", aliases:["food technology","food technology department"]},
+  {name:"Pharmaceutical Technology Department", aliases:["pharmaceutical technology","pharmaceutical department"]},
+  {name:"Robotics and Automation Department", aliases:["robotics and automation","robotics department","robotics"]},
+  {name:"Mechatronics Engineering Department", aliases:["mechatronics engineering","mechatronics department","mechatronics"]},
+  {name:"AICTE Idea Lab", aliases:["aicte idea lab","idea lab"]},
+  {name:"Centre for Excellence", aliases:["centre for excellence","center for excellence"]},
+  {name:"Medical Centre", aliases:["medical centre","medical center","health centre","health center","medical"]},
+  {name:"Sports Ground", aliases:["sports ground","playground","sports"]},
+  {name:"Gymnasium", aliases:["gymnasium","gym"]},
+  {name:"Hostel", aliases:["hostel","boys hostel","girls hostel"]},
+  {name:"Cafeteria", aliases:["paavai canteen","canteen","cafeteria","mess"]},
+  {name:"Paavai School", aliases:["paavai school","paavai higher secondary school","school"]},
+  {name:"Transport Office", aliases:["transport office","transport"]},
+  {name:"Security Office", aliases:["security office","security"]},
+  {name:"ATM", aliases:["atm"]},
+  {name:"Seminar Hall", aliases:["seminar hall"]},
+  {name:"Conference Hall", aliases:["conference hall","conference rooms"]},
+  {name:"Function Hall", aliases:["function hall","function halls"]},
+  {name:"Main Gate", aliases:["main gate","main entrance","entrance gate","gate"]}
+];
+
+const translations = {
+  "en-IN": {
+    gps:"GPS locating...", voice:"AI Voice Assistant", visual:"Visual AI Guidance",
+    shuttle:"Campus Shuttle Live", sos:"EMERGENCY SOS",
+    current:"Current GPS:", destination:"Destination:", none:"None",
+    placeholder:"Type or speak a Paavai campus destination...", changed:"Language changed to"
+  },
+  "ta-IN": {
+    gps:"GPS இருப்பிடத்தை கண்டறிகிறது...", voice:"AI குரல் உதவியாளர்", visual:"காட்சி AI வழிகாட்டல்",
+    shuttle:"கேம்பஸ் ஷட்டில்", sos:"அவசர SOS",
+    current:"தற்போதைய GPS:", destination:"சேருமிடம்:", none:"எதுவும் இல்லை",
+    placeholder:"Paavai வளாக இலக்கை தட்டச்சு அல்லது பேசுங்கள்...", changed:"மொழி மாற்றப்பட்டது"
+  },
+  "hi-IN": {
+    gps:"GPS स्थान खोज रहा है...", voice:"AI वॉइस असिस्टेंट", visual:"विज़ुअल AI मार्गदर्शन",
+    shuttle:"कैम्पस शटल लाइव", sos:"आपातकालीन SOS",
+    current:"वर्तमान GPS:", destination:"गंतव्य:", none:"कोई नहीं",
+    placeholder:"Paavai परिसर का गंतव्य लिखें या बोलें...", changed:"भाषा बदली"
+  },
+  "te-IN": {
+    gps:"GPS స్థానాన్ని గుర్తిస్తోంది...", voice:"AI వాయిస్ అసిస్టెంట్", visual:"విజువల్ AI మార్గదర్శనం",
+    shuttle:"క్యాంపస్ షటిల్", sos:"అత్యవసర SOS",
+    current:"ప్రస్తుత GPS:", destination:"గమ్యం:", none:"ఏదీ లేదు",
+    placeholder:"Paavai క్యాంపస్ గమ్యాన్ని టైప్ చేయండి లేదా మాట్లాడండి...", changed:"భాష మార్చబడింది"
+  },
+  "kn-IN": {
+    gps:"GPS ಸ್ಥಳ ಹುಡುಕಲಾಗುತ್ತಿದೆ...", voice:"AI ಧ್ವನಿ ಸಹಾಯಕ", visual:"ವಿಷುಯಲ್ AI ಮಾರ್ಗದರ್ಶನ",
+    shuttle:"ಕ್ಯಾಂಪಸ್ ಶಟಲ್", sos:"ತುರ್ತು SOS",
+    current:"ಪ್ರಸ್ತುತ GPS:", destination:"ಗುರಿ:", none:"ಯಾವುದೂ ಇಲ್ಲ",
+    placeholder:"Paavai ಕ್ಯಾಂಪಸ್ ಗುರಿಯನ್ನು ಟೈಪ್ ಮಾಡಿ ಅಥವಾ ಮಾತನಾಡಿ...", changed:"ಭಾಷೆ ಬದಲಾಯಿಸಲಾಗಿದೆ"
+  },
+  "ml-IN": {
+    gps:"GPS സ്ഥാനം കണ്ടെത്തുന്നു...", voice:"AI വോയ്സ് അസിസ്റ്റന്റ്", visual:"വിഷ്വൽ AI മാർഗനിർദ്ദേശം",
+    shuttle:"ക്യാമ്പസ് ഷട്ടിൽ", sos:"അടിയന്തര SOS",
+    current:"നിലവിലെ GPS:", destination:"ലക്ഷ്യം:", none:"ഒന്നുമില്ല",
+    placeholder:"Paavai ക്യാമ്പസ് ലക്ഷ്യം ടൈപ്പ് ചെയ്യുകയോ പറയുകയോ ചെയ്യുക...", changed:"ഭാഷ മാറ്റി"
+  }
+};
+
+function byId(id){ return document.getElementById(id); }
+function setGPSStatus(text, error=false){
+  byId("gpsStatus").textContent = text;
+  byId("gpsPill").classList.toggle("error", !!error);
+}
+
+function updateGPSDisplay(){
+  if(userLat === null || userLng === null) return;
+  const accuracy = currentAccuracy ? ` • ±${Math.round(currentAccuracy)}m` : "";
+  byId("currentLocDisplay").textContent =
+    `${userLat.toFixed(6)}, ${userLng.toFixed(6)}${accuracy}${usingDemoLocation ? " (demo)" : ""}`;
+  setGPSStatus(usingDemoLocation ? "Demo campus location" : "GPS live", false);
+}
+
+function startGPS(){
+  if(!navigator.geolocation){
+    setGPSStatus("GPS unavailable", true);
+    byId("currentLocDisplay").textContent = "Use campus demo location";
+    return;
+  }
+
+  setGPSStatus("Requesting GPS...", false);
+
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      userLat=pos.coords.latitude;
+      userLng=pos.coords.longitude;
+      currentAccuracy=pos.coords.accuracy;
+      usingDemoLocation=false;
+      updateGPSDisplay();
+    },
+    err=>{
+      console.warn("GPS error:", err);
+      const msg = err.code===1 ? "Location permission denied" :
+                  err.code===2 ? "Location unavailable" : "GPS timeout";
+      setGPSStatus(msg, true);
+      byId("currentLocDisplay").textContent = "Use campus demo location";
+    },
+    {enableHighAccuracy:true, maximumAge:5000, timeout:12000}
+  );
+
+  if(gpsWatchId !== undefined && navigator.geolocation.watchPosition){
+    navigator.geolocation.watchPosition(
+      pos=>{
+        userLat=pos.coords.latitude;
+        userLng=pos.coords.longitude;
+        currentAccuracy=pos.coords.accuracy;
+        usingDemoLocation=false;
+        updateGPSDisplay();
+      },
+      ()=>{},
+      {enableHighAccuracy:true, maximumAge:5000, timeout:15000}
+    );
+  }
+}
+
+function useCampusDemoLocation(){
+  userLat=CAMPUS.demoLat;
+  userLng=CAMPUS.demoLng;
+  currentAccuracy=null;
+  usingDemoLocation=true;
+  updateGPSDisplay();
+  showMessage("Demo starting location set near Paavai Engineering College. On a phone at campus, allow GPS for the real position.", false);
+}
+
+function normalize(text){
+  return String(text||"")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .replace(/[.,!?;:()[\]{}]/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function extractDestination(text){
+  let input=normalize(text);
+  if(!input) return "";
+
+  input=input
+    .replace(/^(please\s+)?(take|guide|bring)\s+me\s+(to\s+)?/i,"")
+    .replace(/^(please\s+)?(go|navigate|travel)\s+(to\s+)?/i,"")
+    .replace(/^(i|we)\s+(want|need|would like)\s+(to\s+)?/i,"")
+    .replace(/\s+(please|thanks|thank you)$/i,"")
+    .trim();
+
+  const exact = [];
+  for(const item of CAMPUS_DESTINATIONS){
+    for(const alias of item.aliases){
+      if(input===alias || input.includes(alias)){
+        exact.push({name:item.name,len:alias.length});
+      }
+    }
+  }
+  exact.sort((a,b)=>b.len-a.len);
+  return exact.length ? exact[0].name : input;
+}
+
+async function translateToEnglish(text){
+  const original=String(text||"").trim();
+  if(!original) return "";
+  const lang=byId("languagePicker").value;
+  if(lang==="en-IN" || /^[\x00-\x7F]*$/.test(original)) return original;
+
+  try{
+    const response=await fetch("/api/translate",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({text:original,target:"en"})
+    });
+    if(!response.ok) throw new Error("Translation API unavailable");
+    const data=await response.json();
+    return String(data.translated||"").trim() || original;
+  }catch(err){
+    console.warn("Translation failed:",err);
+    showMessage("Translation service is unavailable. You can type the destination in English.", true);
+    return "";
+  }
+}
+
+async function translateAndExtractDestination(text){
+  const english=await translateToEnglish(text);
+  return english ? extractDestination(english) : "";
+}
+
+async function processTextSubmit(){
+  const raw=byId("userInput").value.trim();
+  if(!raw){
+    showMessage("Please enter a Paavai campus destination.",true);
+    byId("userInput").focus();
+    return;
+  }
+
+  const destination=await translateAndExtractDestination(raw);
+  if(!destination){
+    showMessage("Could not identify the destination. Please try again.",true);
+    return;
+  }
+
+  byId("userInput").value=destination;
+  createGoogleRoute(destination);
+}
+
+function quickDestination(destination){
+  byId("userInput").value=destination;
+  createGoogleRoute(destination);
+}
+
+function handleEnter(event){
+  if(event.key==="Enter"){
+    event.preventDefault();
+    processTextSubmit();
+  }
+}
+
+function createGoogleRoute(destination){
+  if(userLat===null || userLng===null){
+    showMessage("Waiting for your location. Allow browser GPS or use the Paavai campus demo location.",true);
+    return;
+  }
+
+  const clean=extractDestination(destination);
+  if(!clean){
+    showMessage("Please enter a valid destination.",true);
+    return;
+  }
+
+  const isCampusDestination=CAMPUS_DESTINATIONS.some(item=>item.name===clean);
+  const finalDestination=isCampusDestination
+    ? `${clean}, ${CAMPUS.address}`
+    : clean;
+  const origin=`${userLat},${userLng}`;
+
+  const params=new URLSearchParams({
+    api:"1",
+    origin:origin,
+    destination:finalDestination,
+    travelmode:"walking",
+    dir_action:"navigate"
+  });
+
+  currentGoogleMapsUrl=`https://www.google.com/maps/dir/?${params.toString()}`;
+
+  byId("userInput").value=clean;
+  byId("targetDisplay").textContent=clean;
+  byId("googleOrigin").textContent=usingDemoLocation ? `${origin} (demo campus location)` : origin;
+  byId("googleDestination").textContent=finalDestination;
+  byId("googleMapsUrl").value=currentGoogleMapsUrl;
+  byId("startNavigation").href=currentGoogleMapsUrl;
+  byId("campusMap").src=`https://www.google.com/maps?q=${encodeURIComponent(finalDestination)}&output=embed`;
+  byId("googlePanel").style.display="block";
+  byId("emptyState").style.display="none";
+  byId("navigationReady").classList.add("show");
+
+  showMessage(`Route prepared for ${clean}. Google Maps will calculate the walking route.`,false);
+  speak(`Walking route to ${clean} is ready.`);
+
+  byId("googlePanel").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+async function copyGoogleUrl(){
+  const value=byId("googleMapsUrl").value;
+  if(!value) return;
+  try{
+    await navigator.clipboard.writeText(value);
+  }catch{
+    byId("googleMapsUrl").select();
+    document.execCommand("copy");
+  }
+  showMessage("Google Maps URL copied successfully.",false);
+}
+
+function showMessage(text,error=false){
+  const el=byId("message");
+  el.textContent=text;
+  el.classList.add("show");
+  if(error){
+    el.style.color="#b91c1c";el.style.background="#fef2f2";el.style.borderColor="#fecaca";
+  }else{
+    el.style.color="var(--wine)";el.style.background="#fff8fa";el.style.borderColor="#efdce2";
+  }
+  const voiceStatus=byId("voiceStartupStatus");
+  if(voiceStatus) voiceStatus.textContent=text;
+}
+
+function toggleVoiceInput(){
+  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SpeechRecognition){
+    voiceFlowActive=false;
+    const message="Voice recognition is not supported. Please use Chrome or Safari with microphone permission.";
+    showMessage(message,true);
+    speak(message,true);
+    return;
+  }
+
+  if(recognition){
+    try{recognition.stop()}catch{}
+    return;
+  }
+
+  recognition=new SpeechRecognition();
+  recognition.lang=byId("languagePicker").value;
+  recognition.continuous=false;
+  recognition.interimResults=false;
+  recognition.maxAlternatives=3;
+
+  recognition.onstart=()=>{
+    byId("micBtn").classList.add("listening");
+    showMessage("Listening... say a Paavai campus destination.",false);
+  };
+
+  recognition.onresult=async event=>{
+    const result=event.results?.[0];
+    const transcript=result?.[0]?.transcript?.trim()||"";
+    if(!transcript){
+      showMessage("No destination was detected.",true);
+      return;
+    }
+    const alternatives=[...result]
+      .map(item=>item.transcript.trim())
+      .filter(Boolean)
+      .filter((value,index,array)=>array.indexOf(value)===index);
+    if(alternatives.length>1){
+      const optionText=alternatives.slice(0,3).join("; ");
+      showMessage(`I heard: ${optionText}. Using the first match.`,false);
+      speak(`I heard ${optionText}. Using the first match.`,false);
+    }
+    byId("userInput").value=transcript;
+    mapsNavigationWindow=window.open("about:blank","accesspathai-google-maps");
+    const destination=await translateAndExtractDestination(transcript);
+    if(!destination){
+      handleVoiceRetry("I could not identify that destination.");
+      return;
+    }
+    voiceAttempts=0;
+    voiceFlowActive=false;
+    destinationCapturedThisSession=true;
+    byId("userInput").value=destination;
+    startVoiceNavigation(destination);
+  };
+
+  recognition.onerror=event=>{
+    const e=event.error;
+    if(e==="no-speech" || e==="aborted"){
+      handleVoiceRetry("I did not hear a destination.");
+      return;
+    }
+    const message=e==="not-allowed"
+      ? "Microphone permission is required. Please allow microphone access in your browser."
+      : e==="audio-capture"
+        ? "No microphone was detected. Please check your microphone."
+        : "Voice input failed. I will try again.";
+    showMessage(message,true);
+    speak(message,true);
+    if(e!=="not-allowed" && e!=="audio-capture"){
+      handleVoiceRetry("Voice input stopped.");
+    }else{
+      voiceFlowActive=false;
+    }
+  };
+
+  recognition.onend=()=>{
+    byId("micBtn").classList.remove("listening");
+    recognition=null;
+  };
+
+  try{recognition.start()}catch(err){console.warn(err);recognition=null;byId("micBtn").classList.remove("listening")}
+}
+
+function handleVoiceRetry(reason){
+  if(recognition){
+    try{recognition.stop()}catch{}
+    recognition=null;
+  }
+  voiceAttempts+=1;
+  if(voiceAttempts < MAX_VOICE_ATTEMPTS){
+    const prompt=`${reason} Please say the destination again. Attempt ${voiceAttempts + 1} of ${MAX_VOICE_ATTEMPTS}.`;
+    showMessage(prompt,true);
+    speak(prompt,true);
+    setTimeout(toggleVoiceInput,900);
+    return;
+  }
+  voiceFlowActive=false;
+  showMessage("Voice recognition is unavailable. You can use the destination field or quick campus locations.",true);
+  speak("Voice recognition is unavailable. You can use the destination field instead.",true);
+}
+
+async function startVoiceNavigation(rawDestination){
+  const destination=extractDestination(rawDestination);
+  if(!destination || destination.length < 2){
+    showMessage("I could not identify the destination. Please try again.",true);
+    speak("I could not identify that destination. Please try again.",true);
+    return;
+  }
+
+  if(!destinationCapturedThisSession){
+    const prompt="I am waiting for your destination. Please say where you would like to go.";
+    showMessage(prompt,true);
+    speak(prompt,true);
+    return;
+  }
+
+  if(userLat===null || userLng===null){
+    showMessage("I heard your destination. Waiting for your current location.",false);
+    speak("I heard your destination. Waiting for your current location.",true);
+    await waitForCurrentLocation();
+  }
+
+  if(userLat===null || userLng===null){
+    const prompt="I could not get your current location. Please allow location access and say the destination again.";
+    showMessage(prompt,true);
+    speak(prompt,true);
+    destinationCapturedThisSession=false;
+    autoVoiceStarted=false;
+    voiceFlowActive=false;
+    setTimeout(startVoiceDestinationFlow,700);
+    return;
+  }
+
+  byId("userInput").value=destination;
+  showMessage(`Starting walking directions to ${destination}. Camera guidance will open next.`,false);
+  speak(`Starting walking directions to ${destination}. I will now open camera guidance.`,true);
+  createGoogleRoute(destination);
+  sessionStorage.setItem("accessPathAutoStart", "1");
+
+  setTimeout(()=>{
+    if(currentGoogleMapsUrl){
+      if(mapsNavigationWindow && !mapsNavigationWindow.closed){
+        mapsNavigationWindow.location.href=currentGoogleMapsUrl;
+      }else{
+        mapsNavigationWindow=window.open(currentGoogleMapsUrl,"accesspathai-google-maps");
+        if(!mapsNavigationWindow){
+          const prompt="Google Maps could not open automatically. Please allow pop-ups for turn-by-turn directions. Camera guidance will continue.";
+          showMessage(prompt,true);
+          speak(prompt,true);
+        }
+      }
+    }
+    window.location.href=`virtual.html?destination=${encodeURIComponent(destination)}&autoStart=1`;
+  },900);
+}
+
+function waitForCurrentLocation(timeout=10000){
+  return new Promise(resolve=>{
+    const started=Date.now();
+    const timer=setInterval(()=>{
+      if((userLat!==null && userLng!==null) || Date.now()-started>=timeout){
+        clearInterval(timer);
+        resolve();
+      }
+    },200);
+  });
+}
+
+function startVoiceDestinationFlow(){
+  if(autoVoiceStarted || recognition || voiceFlowActive) return;
+  autoVoiceStarted=true;
+  voiceFlowActive=true;
+  voiceAttempts=0;
+  const prompt="Welcome to AccessPathAI. Where would you like to go? Please say a destination.";
+  showMessage(prompt,false);
+  speak(prompt,true,()=>toggleVoiceInput());
+}
+
+function resetVoiceStartup(){
+  if(recognition){
+    try{recognition.abort()}catch{}
+    recognition=null;
+  }
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  byId("micBtn").classList.remove("listening");
+  autoVoiceStarted=false;
+  voiceFlowActive=false;
+  voiceAttempts=0;
+  destinationCapturedThisSession=false;
+  sessionStorage.removeItem("accessPathAutoStart");
+  setTimeout(startVoiceDestinationFlow,100);
+}
+
+function speak(text,interrupt=false,onEnd=null){
+  if(!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=byId("languagePicker").value;
+  u.rate=.92;
+  if(onEnd) u.onend=onEnd;
+  window.speechSynthesis.speak(u);
+}
+
+async function triggerSOS(){
+  const locationText=(userLat!==null&&userLng!==null)
+    ? `Current GPS location: ${userLat.toFixed(6)}, ${userLng.toFixed(6)}`
+    : "Current GPS location is not available.";
+
+  const message=`Emergency SOS activated. ${locationText}`;
+
+  try{
+    await fetch("/api/sos",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({page:"index",lat:userLat,lng:userLng,message})
+    });
+  }catch(err){
+    console.warn("SOS API unavailable:",err);
+  }
+
+  showMessage(message,true);
+  speak("Emergency SOS activated.");
+  alert(message);
+}
+
+function applyLanguage(){
+  const lang=byId("languagePicker").value;
+  const t=translations[lang]||translations["en-IN"];
+  byId("gpsStatus").textContent=t.gps;
+  byId("userInput").placeholder=t.placeholder;
+  document.documentElement.lang=lang;
+
+  const menu=$$(".menu-item span");
+  if(menu.length>=3){
+    menu[0].textContent=t.voice;menu[1].textContent=t.visual;menu[2].textContent=t.shuttle;
+  }
+  const sos=$(".sos-btn");
+  if(sos) sos.lastChild.textContent=t.sos;
+  localStorage.setItem("accessPathLanguage",lang);
+}
+
+function $(selector){ return document.querySelector(selector); }
+function $$(selector){ return document.querySelectorAll(selector); }
+
+byId("languagePicker").addEventListener("change",()=>{
+  applyLanguage();
+  const label=byId("languagePicker").options[byId("languagePicker").selectedIndex]?.text||"English";
+  showMessage(`${translations[byId("languagePicker").value]?.changed||"Language changed to"} ${label}.`,false);
+});
+
+function setMobileActive(button){
+  $$(".mobile-nav-item").forEach(x=>x.classList.remove("active"));
+  button.classList.add("active");
+}
+
+function saveDestinationForOtherPage(){
+  const destination=byId("targetDisplay").textContent.trim();
+  if(destination && destination!=="None"){
+    localStorage.setItem("accessPathDestination",destination);
+    sessionStorage.setItem("accessPathDestination",destination);
+    return destination;
+  }
+  localStorage.removeItem("accessPathDestination");
+  sessionStorage.removeItem("accessPathDestination");
+  return "";
+}
+
+function openVisualGuidance(){
+  const destination=saveDestinationForOtherPage();
+  window.location.href=destination
+    ? `virtual.html?destination=${encodeURIComponent(destination)}`
+    : "virtual.html";
+}
+
+function openCampusShuttle(){
+  window.location.href="shuttle.html";
+}
+
+window.addEventListener("pageshow",()=>{
+  lucide.createIcons();
+  const saved=localStorage.getItem("accessPathLanguage");
+  if(saved && translations[saved]) byId("languagePicker").value=saved;
+  applyLanguage();
+  startGPS();
+  resetVoiceStartup();
+  if("serviceWorker" in navigator) navigator.serviceWorker.register("/service-worker.js").catch(console.warn);
+});
+
+window.addEventListener("focus",()=>{
+  if(!autoVoiceStarted && !voiceFlowActive) startVoiceDestinationFlow();
+});
+</script>
+</body>
+</html>
