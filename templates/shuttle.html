@@ -4229,10 +4229,12 @@
 
     let shuttleRecognition = null;
     let shuttleListening = false;
+    let shuttleVoiceActive = false;
 
     function startShuttleVoiceAssistant() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition || shuttleListening) return;
+      shuttleVoiceActive = true;
       shuttleRecognition = new SpeechRecognition();
       shuttleRecognition.lang = currentLanguage;
       shuttleRecognition.continuous = false;
@@ -4277,6 +4279,19 @@
     window.addEventListener("beforeunload", function() {
       if (shuttleRecognition) {
         try { shuttleRecognition.abort(); } catch (error) {}
+      }
+    });
+
+    document.addEventListener("visibilitychange", function() {
+      if (document.hidden) {
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        if (shuttleRecognition) {
+          try { shuttleRecognition.abort(); } catch (error) {}
+          shuttleRecognition = null;
+          shuttleListening = false;
+        }
+      } else if (shuttleVoiceActive) {
+        speak("Shuttle assistance is active again. I am listening.", true, startShuttleVoiceAssistant);
       }
     });
 

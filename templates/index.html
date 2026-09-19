@@ -240,6 +240,12 @@ let destinationCapturedThisSession = false;
 let mapsNavigationWindow = null;
 let pendingVoiceDestination = "";
 let awaitingDestinationConfirmation = false;
+let voiceListeningRequested = false;
+let pageVisibilityPaused = false;
+let locationFallbackActive = false;
+let awaitingOriginConfirmation = false;
+let manualOrigin = "";
+let voiceRestartTimer = null;
 
 /* Verified/publicly documented Paavai facilities and current departments.
    These are aliases, not claims about exact building numbers. */
@@ -478,7 +484,7 @@ function handleEnter(event){
 }
 
 function createGoogleRoute(destination){
-  if(userLat===null || userLng===null){
+  if((userLat===null || userLng===null) && !manualOrigin){
     showMessage("Waiting for your location. Allow browser GPS or use the Paavai campus demo location.",true);
     return;
   }
@@ -493,7 +499,7 @@ function createGoogleRoute(destination){
   const finalDestination=isCampusDestination
     ? `${clean}, ${CAMPUS.address}`
     : clean;
-  const origin=`${userLat},${userLng}`;
+  const origin=manualOrigin || `${userLat},${userLng}`;
 
   const params=new URLSearchParams({
     api:"1",
@@ -558,13 +564,14 @@ function toggleVoiceInput(){
   }
 
   if(recognition){
+    voiceListeningRequested=false;
     try{recognition.stop()}catch{}
     return;
   }
 
   recognition=new SpeechRecognition();
   recognition.lang=byId("languagePicker").value;
-  recognition.continuous=false;
+  recognition.continuous=true;
   recognition.interimResults=false;
   recognition.maxAlternatives=3;
 
@@ -574,10 +581,35 @@ function toggleVoiceInput(){
   };
 
   recognition.onresult=async event=>{
-    const result=event.results?.[0];
+    const result=event.results?.[event.results.length-1];
     const transcript=result?.[0]?.transcript?.trim()||"";
     if(!transcript){
       showMessage("No destination was detected.",true);
+      return;
+    }
+    if(locationFallbackActive){
+      manualOrigin=transcript.replace(/^(my current location is|i am at|start from)\s+/i,"").trim();
+      locationFallbackActive=false;
+      awaitingOriginConfirmation=true;
+      speak(`I will start from ${manualOrigin}. Please say yes to confirm, or no to try again.`,true,()=>toggleVoiceInput());
+      return;
+    }
+    if(awaitingOriginConfirmation){
+      if(isAffirmative(transcript)){
+        awaitingOriginConfirmation=false;
+        startVoiceNavigation(pendingVoiceDestination);
+      }else if(isNegative(transcript)){
+        awaitingOriginConfirmation=false;
+        manualOrigin="";
+        locationFallbackActive=true;
+        speak("Please say your current address or landmark again.",true,()=>toggleVoiceInput());
+      }else{
+        speak("Please say yes to confirm the starting location, or no to try again.",true,()=>toggleVoiceInput());
+      }
+      return;
+    }
+    if(!awaitingDestinationConfirmation && /\b(camera access|give camera access|enable camera|camera)\b/i.test(transcript)){
+      speak("Opening camera safety guidance.",true,()=>window.location.href="virtual.html");
       return;
     }
     if(!awaitingDestinationConfirmation && /\b(shuttle|bus|shuttle stop|shuttle schedule)\b/i.test(transcript)){
@@ -631,6 +663,7 @@ function toggleVoiceInput(){
 
   recognition.onerror=event=>{
     const e=event.error;
+    if(pageVisibilityPaused || e==="aborted") return;
     if(e==="no-speech" || e==="aborted"){
       handleVoiceRetry("I did not hear a destination.");
       return;
@@ -652,8 +685,13 @@ function toggleVoiceInput(){
   recognition.onend=()=>{
     byId("micBtn").classList.remove("listening");
     recognition=null;
+    if(voiceListeningRequested && !pageVisibilityPaused){
+      clearTimeout(voiceRestartTimer);
+      voiceRestartTimer=setTimeout(toggleVoiceInput,250);
+    }
   };
 
+  voiceListeningRequested=true;
   try{recognition.start()}catch(err){console.warn(err);recognition=null;byId("micBtn").classList.remove("listening")}
 }
 
@@ -690,20 +728,17 @@ async function startVoiceNavigation(rawDestination){
     return;
   }
 
-  if(userLat===null || userLng===null){
+  if((userLat===null || userLng===null) && !manualOrigin){
     showMessage("I heard your destination. Waiting for your current location.",false);
     speak("I heard your destination. Waiting for your current location.",true);
     await waitForCurrentLocation();
   }
 
-  if(userLat===null || userLng===null){
-    const prompt="I could not get your current location. Please allow location access and say the destination again.";
+  if((userLat===null || userLng===null) && !manualOrigin){
+    const prompt="I could not get your current location. Please say your current address or landmark so I can use it as the starting point.";
     showMessage(prompt,true);
-    speak(prompt,true);
-    destinationCapturedThisSession=false;
-    autoVoiceStarted=false;
-    voiceFlowActive=false;
-    setTimeout(startVoiceDestinationFlow,700);
+    locationFallbackActive=true;
+    speak(prompt,true,()=>toggleVoiceInput());
     return;
   }
 
@@ -767,6 +802,12 @@ function resetVoiceStartup(){
   }
   if("speechSynthesis" in window) speechSynthesis.cancel();
   byId("micBtn").classList.remove("listening");
+  voiceListeningRequested=false;
+  pageVisibilityPaused=false;
+  locationFallbackActive=false;
+  awaitingOriginConfirmation=false;
+  manualOrigin="";
+  clearTimeout(voiceRestartTimer);
   autoVoiceStarted=false;
   voiceFlowActive=false;
   voiceAttempts=0;
@@ -786,6 +827,22 @@ function speak(text,interrupt=false,onEnd=null){
   if(onEnd) u.onend=onEnd;
   window.speechSynthesis.speak(u);
 }
+
+document.addEventListener("visibilitychange",()=>{
+  pageVisibilityPaused=document.hidden;
+  if(document.hidden){
+    if("speechSynthesis" in window) window.speechSynthesis.cancel();
+    if(recognition){
+      try{recognition.abort()}catch{}
+      recognition=null;
+    }
+    byId("micBtn").classList.remove("listening");
+    return;
+  }
+  if(voiceListeningRequested && !recognition){
+    speak("AccessPathAI is active again. I am listening.",true,()=>toggleVoiceInput());
+  }
+});
 
 async function triggerSOS(){
   const locationText=(userLat!==null&&userLng!==null)

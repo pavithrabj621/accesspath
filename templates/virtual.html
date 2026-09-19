@@ -5954,10 +5954,12 @@
 
     let virtualRecognition = null;
     let virtualListening = false;
+    let virtualVoiceActive = false;
 
     function startVirtualVoiceListener() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition || virtualListening) return;
+      virtualVoiceActive = true;
       virtualRecognition = new SpeechRecognition();
       virtualRecognition.lang = currentLanguage;
       virtualRecognition.continuous = false;
@@ -6015,6 +6017,19 @@
     window.addEventListener("beforeunload", function() {
       if (virtualRecognition) {
         try { virtualRecognition.abort(); } catch (error) {}
+      }
+    });
+
+    document.addEventListener("visibilitychange", function() {
+      if (document.hidden) {
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        if (virtualRecognition) {
+          try { virtualRecognition.abort(); } catch (error) {}
+          virtualRecognition = null;
+          virtualListening = false;
+        }
+      } else if (virtualVoiceActive) {
+        speak("Visual guidance is active again. I am listening.", true, startVirtualVoiceListener);
       }
     });
 
