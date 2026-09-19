@@ -5865,7 +5865,7 @@
 
         if (autoStart && selectedDestination) {
           sessionStorage.removeItem("accessPathAutoStart");
-          startGuidance();
+          requestCameraConsent();
         }
 
         await loadObjectDetectionModel();
@@ -5945,6 +5945,78 @@
 
       }
     );
+
+    function requestCameraConsent() {
+      const prompt = "Would you like to enable camera for your safety? Please say yes or no.";
+      showMessage(prompt);
+      speak(prompt, true, startVirtualVoiceListener);
+    }
+
+    let virtualRecognition = null;
+    let virtualListening = false;
+
+    function startVirtualVoiceListener() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition || virtualListening) return;
+      virtualRecognition = new SpeechRecognition();
+      virtualRecognition.lang = currentLanguage;
+      virtualRecognition.continuous = false;
+      virtualRecognition.interimResults = false;
+      virtualListening = true;
+      virtualRecognition.onresult = function(event) {
+        const command = event.results[0][0].transcript.trim().toLowerCase();
+        virtualListening = false;
+        if (/\b(yes|yeah|yep|okay|ok|sure)\b/.test(command)) {
+          speak("Camera permission requested. Starting safety guidance.", true);
+          startGuidance();
+          setTimeout(startVirtualVoiceListener, 1200);
+        } else if (/\b(no|nope|not now)\b/.test(command)) {
+          speak("Camera remains off. Voice navigation will continue.", true);
+          startGuidanceWithoutCamera();
+          setTimeout(startVirtualVoiceListener, 1200);
+        } else if (/\b(shuttle|bus|shuttle stop|shuttle schedule)\b/.test(command)) {
+          speak("Opening campus shuttle assistance.", true);
+          window.location.href = "shuttle.html";
+        } else if (/\b(back|home|main navigation)\b/.test(command)) {
+          window.location.href = "index.html";
+        } else if (/\b(help|emergency|sos)\b/.test(command)) {
+          triggerVirtualSOS();
+        } else {
+          speak("I did not understand. Say yes, no, shuttle, back, or emergency.", true, startVirtualVoiceListener);
+        }
+      };
+      virtualRecognition.onerror = function() {
+        virtualListening = false;
+        speak("I did not hear you. Please answer yes or no.", true, startVirtualVoiceListener);
+      };
+      virtualRecognition.onend = function() { virtualListening = false; };
+      try { virtualRecognition.start(); } catch (error) { virtualListening = false; }
+    }
+
+    function startGuidanceWithoutCamera() {
+      guidanceRunning = true;
+      updateNavigationMap();
+      speak(`Voice navigation continues toward ${selectedDestination}. Google Maps remains open for turn-by-turn directions.`, false);
+    }
+
+    function triggerVirtualSOS() {
+      const message = "Emergency assistance requested from visual guidance.";
+      fetch("/api/sos", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({page:"virtual", lat:currentLatitude, lng:currentLongitude, message})}).catch(function() {});
+      speak("Emergency assistance has been requested.", true);
+      showMessage(message);
+    }
+
+    window.addEventListener("load", function() {
+      if (!new URLSearchParams(window.location.search).has("autoStart")) {
+        setTimeout(startVirtualVoiceListener, 700);
+      }
+    });
+
+    window.addEventListener("beforeunload", function() {
+      if (virtualRecognition) {
+        try { virtualRecognition.abort(); } catch (error) {}
+      }
+    });
 
   </script>
 

@@ -4227,6 +4227,59 @@
       }
     );
 
+    let shuttleRecognition = null;
+    let shuttleListening = false;
+
+    function startShuttleVoiceAssistant() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition || shuttleListening) return;
+      shuttleRecognition = new SpeechRecognition();
+      shuttleRecognition.lang = currentLanguage;
+      shuttleRecognition.continuous = false;
+      shuttleRecognition.interimResults = false;
+      shuttleListening = true;
+      shuttleRecognition.onresult = function(event) {
+        const command = event.results[0][0].transcript.trim().toLowerCase();
+        shuttleListening = false;
+        if (/\b(back|home|main navigation|go back)\b/.test(command)) {
+          speak("Returning to main navigation.", true);
+          window.location.href = "index.html";
+        } else if (/\b(virtual|camera|visual guidance)\b/.test(command)) {
+          speak("Opening safety camera guidance.", true);
+          window.location.href = "virtual.html";
+        } else if (/\b(help|emergency|sos|assistance)\b/.test(command)) {
+          triggerSOS();
+        } else if (/\b(arrival|eta|when|near|location|where|status|schedule|route|stop|shuttle|bus)\b/.test(command)) {
+          trackShuttle();
+          speakArrival();
+          setTimeout(startShuttleVoiceAssistant, 900);
+        } else if (/\b(repeat|again)\b/.test(command)) {
+          speakArrival();
+          setTimeout(startShuttleVoiceAssistant, 900);
+        } else {
+          speak("I can tell you the shuttle location, next stop, arrival time, route, or schedule. Say back to return.", true, startShuttleVoiceAssistant);
+        }
+      };
+      shuttleRecognition.onerror = function() {
+        shuttleListening = false;
+        setTimeout(startShuttleVoiceAssistant, 900);
+      };
+      shuttleRecognition.onend = function() { shuttleListening = false; };
+      try { shuttleRecognition.start(); } catch (error) { shuttleListening = false; }
+    }
+
+    window.addEventListener("load", function() {
+      setTimeout(function() {
+        speak("Campus shuttle assistance is ready. Ask about a shuttle, arrival time, route, or stop.", true, startShuttleVoiceAssistant);
+      }, 700);
+    });
+
+    window.addEventListener("beforeunload", function() {
+      if (shuttleRecognition) {
+        try { shuttleRecognition.abort(); } catch (error) {}
+      }
+    });
+
   </script>
 
 

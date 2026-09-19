@@ -238,6 +238,8 @@ const MAX_VOICE_ATTEMPTS = 3;
 let voiceFlowActive = false;
 let destinationCapturedThisSession = false;
 let mapsNavigationWindow = null;
+let pendingVoiceDestination = "";
+let awaitingDestinationConfirmation = false;
 
 /* Verified/publicly documented Paavai facilities and current departments.
    These are aliases, not claims about exact building numbers. */
@@ -578,6 +580,14 @@ function toggleVoiceInput(){
       showMessage("No destination was detected.",true);
       return;
     }
+    if(!awaitingDestinationConfirmation && /\b(shuttle|bus|shuttle stop|shuttle schedule)\b/i.test(transcript)){
+      speak("I heard a shuttle request. Opening campus shuttle assistance.",true,()=>window.location.href="shuttle.html");
+      return;
+    }
+    if(!awaitingDestinationConfirmation && /\b(emergency|sos|help me|contact assistance)\b/i.test(transcript)){
+      triggerSOS();
+      return;
+    }
     const alternatives=[...result]
       .map(item=>item.transcript.trim())
       .filter(Boolean)
@@ -588,6 +598,20 @@ function toggleVoiceInput(){
       speak(`I heard ${optionText}. Using the first match.`,false);
     }
     byId("userInput").value=transcript;
+    if(awaitingDestinationConfirmation){
+      if(isAffirmative(transcript)){
+        awaitingDestinationConfirmation=false;
+        startVoiceNavigation(pendingVoiceDestination);
+      }else if(isNegative(transcript)){
+        awaitingDestinationConfirmation=false;
+        pendingVoiceDestination="";
+        destinationCapturedThisSession=false;
+        speak("Okay. Please say the destination again.",true,()=>toggleVoiceInput());
+      }else{
+        speak("Please say yes if I understood correctly, or no to try again.",true,()=>toggleVoiceInput());
+      }
+      return;
+    }
     mapsNavigationWindow=window.open("about:blank","accesspathai-google-maps");
     const destination=await translateAndExtractDestination(transcript);
     if(!destination){
@@ -598,7 +622,11 @@ function toggleVoiceInput(){
     voiceFlowActive=false;
     destinationCapturedThisSession=true;
     byId("userInput").value=destination;
-    startVoiceNavigation(destination);
+    pendingVoiceDestination=destination;
+    awaitingDestinationConfirmation=true;
+    const confirmation=`I heard ${destination}. Is that correct? Please say yes or no.`;
+    showMessage(confirmation,false);
+    speak(confirmation,true,()=>toggleVoiceInput());
   };
 
   recognition.onerror=event=>{
@@ -702,6 +730,14 @@ async function startVoiceNavigation(rawDestination){
   },900);
 }
 
+function isAffirmative(text){
+  return /^(yes|yeah|yep|correct|right|okay|ok|sure|affirmative|that is right|thats right)\b/i.test(normalize(text));
+}
+
+function isNegative(text){
+  return /^(no|nope|wrong|not correct|try again|change it)\b/i.test(normalize(text));
+}
+
 function waitForCurrentLocation(timeout=10000){
   return new Promise(resolve=>{
     const started=Date.now();
@@ -735,6 +771,8 @@ function resetVoiceStartup(){
   voiceFlowActive=false;
   voiceAttempts=0;
   destinationCapturedThisSession=false;
+  pendingVoiceDestination="";
+  awaitingDestinationConfirmation=false;
   sessionStorage.removeItem("accessPathAutoStart");
   setTimeout(startVoiceDestinationFlow,100);
 }
