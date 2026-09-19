@@ -4295,6 +4295,14 @@
       }
     });
 
+    function resumeShuttleVoice() {
+      if (document.hidden || shuttleListening || !shuttleVoiceActive) return;
+      speak("I am listening.", true, startShuttleVoiceAssistant);
+    }
+
+    window.addEventListener("focus", resumeShuttleVoice);
+    window.addEventListener("pageshow", resumeShuttleVoice);
+
   </script>
 
 

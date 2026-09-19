@@ -790,7 +790,7 @@ function startVoiceDestinationFlow(){
   autoVoiceStarted=true;
   voiceFlowActive=true;
   voiceAttempts=0;
-  const prompt="Welcome to AccessPathAI. Where would you like to go? Please say a destination.";
+  const prompt="Where do you want to go? Please say your destination.";
   showMessage(prompt,false);
   speak(prompt,true,()=>toggleVoiceInput());
 }
@@ -843,6 +843,16 @@ document.addEventListener("visibilitychange",()=>{
     speak("AccessPathAI is active again. I am listening.",true,()=>toggleVoiceInput());
   }
 });
+
+function resumeHomeVoice(){
+  if(document.hidden || recognition || !autoVoiceStarted) return;
+  pageVisibilityPaused=false;
+  voiceListeningRequested=true;
+  speak("I am listening.",true,()=>toggleVoiceInput());
+}
+
+window.addEventListener("focus",resumeHomeVoice);
+window.addEventListener("pageshow",resumeHomeVoice);
 
 async function triggerSOS(){
   const locationText=(userLat!==null&&userLng!==null)

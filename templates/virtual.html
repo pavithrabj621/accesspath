@@ -6033,6 +6033,14 @@
       }
     });
 
+    function resumeVirtualVoice() {
+      if (document.hidden || virtualListening || !virtualVoiceActive) return;
+      speak("I am listening.", true, startVirtualVoiceListener);
+    }
+
+    window.addEventListener("focus", resumeVirtualVoice);
+    window.addEventListener("pageshow", resumeVirtualVoice);
+
   </script>
 
 </body>
